@@ -1,7 +1,7 @@
 /*
  * (c) 2017 Paweł Knioła <pawel.kn@gmail.com>
  *
- * i.MX28 GPIO pulse width modulator.
+ * i.MX28 GPIO pulse width modulator
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -293,16 +293,42 @@ static int imx28_gpio_pwm_remove(struct platform_device *pdev)
     return 0;
 }
 
+static int imx28_gpio_pwm_suspend(struct device *dev)
+{
+    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
+    const struct imx28_gpio_pwm_platform_data *pdata = hw->pdata;
+
+    if (device_may_wakeup(dev))
+        disable_irq_wake(pdata->timrot_irq);
+
+    return 0;
+}
+
+static int imx28_gpio_pwm_resume(struct device *dev)
+{
+    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
+    const struct imx28_gpio_pwm_platform_data *pdata = hw->pdata;
+
+    if (device_may_wakeup(dev))
+        enable_irq_wake(pdata->timrot_irq);
+
+    return 0;
+}
+
+static SIMPLE_DEV_PM_OPS(imx28_gpio_pwm_pm_ops,
+    imx28_gpio_pwm_suspend, imx28_gpio_pwm_resume);
+
 static struct platform_driver imx28_gpio_pwm_driver = {
-    .probe       = imx28_gpio_pwm_probe,
-    .remove      = imx28_gpio_pwm_remove,
-    .driver      = {
-        .name    = DRV_NAME,
+    .probe      = imx28_gpio_pwm_probe,
+    .remove     = imx28_gpio_pwm_remove,
+    .driver     = {
+        .name           = DRV_NAME,
+        .pm	            = &imx28_gpio_pwm_pm_ops,
         .of_match_table = of_match_ptr(imx28_gpio_pwm_of_match),
     }
 };
 module_platform_driver(imx28_gpio_pwm_driver);
 
 MODULE_LICENSE("GPL v2");
-MODULE_DESCRIPTION("Generic GPIO pulse generator driver");
+MODULE_DESCRIPTION("i.MX28 GPIO pulse width modulator");
 MODULE_AUTHOR("Paweł Knioła <pawel.kn@gmail.com>");
