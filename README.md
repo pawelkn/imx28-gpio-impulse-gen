@@ -17,14 +17,14 @@ Required properties:
 * gpios: a spec for a GPIO to be used as impulse output
 
 Optional properties:
-* pulse-delay: delay between impulses.The value is given in timer ticks. Default is 60000
+* pulse-delay: delay between impulses. The value is given in timer ticks. Default is 60000
 * pulse-width: width of an impulse. The value is given in timer ticks. Default is 60000
 * timrot-number: used timer/rotary encoder of i.MX28 procesor. Defaut is 2. It can be also 3. Timers 0 and 1 are already used by Linux kernel.
 
 Example:
 ```c
         pulse-generator {
-                compatible = "gpio-pulse-generator";
+                compatible = "imx28-gpio-pwm";
                 gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
                 pulse-width = <60000>;
                 pulse-delay = <60000>;
