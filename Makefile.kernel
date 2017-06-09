@@ -1,1 +1,1 @@
-obj-$(CONFIG_INPUT_GPIO_PULSE_GENERATOR)	+= gpio-pulse-generator.o
+obj-$(CONFIG_IMX28_GPIO_PWM)	+= imx28-gpio-pwm.o

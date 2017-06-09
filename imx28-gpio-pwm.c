@@ -1,7 +1,7 @@
 /*
  * (c) 2017 Paweł Knioła <pawel.kn@gmail.com>
  *
- * Generic GPIO pulse generator.
+ * i.MX28 GPIO pulse width modulator.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -28,7 +28,7 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 
-#define DRV_NAME "gpio-pulse-generator"
+#define DRV_NAME "imx28-gpio-pwm"
 
 #define HW_TIMROT_TIMCTRL_REG(n)        (0x20 + (n) * 0x40)
 #define HW_TIMROT_TIMCTRL_REG_SET(n)    (HW_TIMROT_TIMCTRL_REG(n) + 4)
@@ -45,40 +45,40 @@
 #define TIMROT_N_DEFAULT    2
 #define TIMEOUT_DEFAULT     60000
 
-struct gpg_platform_data {
+struct imx28_gpio_pwm_platform_data {
     int gpio;
     bool inverted;
 
     u32 pulse_width;
     u32 pulse_delay;
- 
+
     u32 timrot_n;
     u32 timrot_irq;
     void __iomem *timrot_base;
 };
 
-struct gpg_hw {
-    const struct gpg_platform_data *pdata;
+struct imx28_gpio_pwm_hw {
+    const struct imx28_gpio_pwm_platform_data *pdata;
     struct miscdevice miscdev;
 
-    u64 count;
+    u64 counter;
     bool state;
 };
 
-static int gpg_open(struct inode *inode, struct file *file)
+static int imx28_gpio_pwm_open(struct inode *inode, struct file *file)
 {
    /* dummy open function must be declared due to bug in kernel 3.16 */
    return 0;
 }
 
-static ssize_t gpg_read(struct file *file, char __user * userbuf, size_t count, loff_t * ppos)
+static ssize_t imx28_gpio_pwm_read(struct file *file, char __user * userbuf, size_t count, loff_t * ppos)
 {
     struct miscdevice *miscdev = file->private_data;
     struct device *dev = miscdev->parent;
-    struct gpg_hw *hw = dev_get_drvdata(dev);
+    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
 
     char buf[22];
-    int len = sprintf(buf, "%llu\n", hw->count);
+    int len = sprintf(buf, "%llu\n", hw->counter);
 
     if ((len < 0) || (len > count))
         return -EINVAL;
@@ -93,78 +93,79 @@ static ssize_t gpg_read(struct file *file, char __user * userbuf, size_t count, 
     return len;
 }
 
-static ssize_t gpg_write(struct file *file, const char __user * userbuf, size_t len, loff_t * ppos)
+static ssize_t imx28_gpio_pwm_write(struct file *file, const char __user * userbuf, size_t count, loff_t * ppos)
 {
     struct miscdevice *miscdev = file->private_data;
     struct device *dev = miscdev->parent;
-    struct gpg_hw *hw = dev_get_drvdata(dev);
+    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
 
     u64 increment;
-    if (kstrtoull_from_user(userbuf, len, 0, &increment))
+    if (kstrtoull_from_user(userbuf, count, 0, &increment))
         return -EINVAL;
 
-    hw->count += increment;    
-    return len;
+    hw->counter += increment;
+    return count;
 }
 
-static struct file_operations gpg_fops = {
+static struct file_operations imx28_gpio_pwm_fops = {
     .owner  = THIS_MODULE,
-    .open   = gpg_open,
-    .read   = gpg_read,
-    .write  = gpg_write,
+    .open   = imx28_gpio_pwm_open,
+    .read   = imx28_gpio_pwm_read,
+    .write  = imx28_gpio_pwm_write,
 };
 
-static irqreturn_t gpg_irq(int irq, void *dev_id)
+static irqreturn_t imx28_gpio_pwm_irq(int irq, void *dev_id)
 {
-    struct gpg_hw *hw = dev_id;
-    const struct gpg_platform_data *pdata = hw->pdata;
+    struct imx28_gpio_pwm_hw *hw = dev_id;
+    const struct imx28_gpio_pwm_platform_data *pdata = hw->pdata;
 
-    if (hw->count > 0 ) { 
+    if (hw->counter > 0 ) {
         if (hw->state)
-            hw->count--;
+            hw->counter--;
 
-       hw->state = !hw->state;
+       hw->state = ! hw->state;
        gpio_set_value(pdata->gpio, hw->state ^ pdata->inverted);
     }
 
     /* restart timer */
-    writel(hw->state ? pdata->pulse_width : pdata->pulse_delay, 
+    writel(hw->state ? pdata->pulse_width : pdata->pulse_delay,
         pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot_n));
 
     /* acknowledge the interrupt */
-    writel(TIMROT_TIMCTRL_IRQ, 
+    writel(TIMROT_TIMCTRL_IRQ,
         pdata->timrot_base + HW_TIMROT_TIMCTRL_REG_CLR(pdata->timrot_n));
+
     return IRQ_HANDLED;
 }
 
-static const struct of_device_id gpg_of_match[] = {
+static const struct of_device_id imx28_gpio_pwm_of_match[] = {
     { .compatible = DRV_NAME, },
     { },
 };
-MODULE_DEVICE_TABLE(of, gpg_of_match);
+MODULE_DEVICE_TABLE(of, imx28_gpio_pwm_of_match);
 
-static struct gpg_platform_data *gpg_parse_dt(struct device *dev)
+static struct imx28_gpio_pwm_platform_data *imx28_gpio_pwm_parse_dt(struct device *dev)
 {
     enum of_gpio_flags flags;
-    struct gpg_platform_data *pdata;
+    struct imx28_gpio_pwm_platform_data *pdata;
     const struct of_device_id *of_id;
     struct device_node *np;
     int err;
 
     /* parse driver device tree */
-    of_id = of_match_device(gpg_of_match, dev);
+    of_id = of_match_device(imx28_gpio_pwm_of_match, dev);
     np = dev->of_node;
 
     if (!of_id || !np)
         return NULL;
 
-    pdata = kzalloc(sizeof(struct gpg_platform_data), GFP_KERNEL);
+    pdata = kzalloc(sizeof(struct imx28_gpio_pwm_platform_data), GFP_KERNEL);
     if (!pdata)
         return ERR_PTR(-ENOMEM);
 
     pdata->gpio = of_get_gpio_flags(np, 0, &flags);
     pdata->inverted = flags & OF_GPIO_ACTIVE_LOW;
-    
+
     err = of_property_read_u32(np, "pulse-width", &pdata->pulse_width);
     if (err)
         pdata->pulse_width = TIMEOUT_DEFAULT;
@@ -190,16 +191,16 @@ static struct gpg_platform_data *gpg_parse_dt(struct device *dev)
     return pdata;
 }
 
-static int gpg_probe(struct platform_device *pdev)
+static int imx28_gpio_pwm_probe(struct platform_device *pdev)
 {
     struct device *dev = &pdev->dev;
-    const struct gpg_platform_data *pdata = dev_get_platdata(dev);
-    struct gpg_hw *hw;
+    const struct imx28_gpio_pwm_platform_data *pdata = dev_get_platdata(dev);
+    struct imx28_gpio_pwm_hw *hw;
     int err;
-    
+
     /* Read platform data */
     if (!pdata) {
-        pdata = gpg_parse_dt(dev);
+        pdata = imx28_gpio_pwm_parse_dt(dev);
         if (IS_ERR(pdata))
             return PTR_ERR(pdata);
 
@@ -208,48 +209,50 @@ static int gpg_probe(struct platform_device *pdev)
             return -EINVAL;
         }
     }
-    
+
     /* Create device data struct */
-    hw = kzalloc(sizeof(struct gpg_hw), GFP_KERNEL);
+    hw = kzalloc(sizeof(struct imx28_gpio_pwm_hw), GFP_KERNEL);
     if (!hw) {
         err = -ENOMEM;
         goto exit_free_mem;
     }
 
     hw->pdata = pdata;
-    hw->count = 0;
+    hw->counter = 0;
     hw->state = 0;
-    
+
     dev_set_drvdata(dev, hw);
-    
+
     /* Setup gpio */
     err = gpio_request_one(pdata->gpio, GPIOF_IN, dev_name(dev));
     if (err) {
         dev_err(dev, "unable to request GPIO %d\n", pdata->gpio);
         goto exit_free_mem;
     }
-    
+
     gpio_direction_output(pdata->gpio, 1);
     gpio_set_value(pdata->gpio, hw->state ^ pdata->inverted);
 
     /* Setup timer */
-    writel(TIMROT_TIMCTRL_UPDATE | TIMROT_TIMCTRL_ALWAYS_TICK | TIMROT_TIMCTRL_IRQ_EN,
-           pdata->timrot_base + HW_TIMROT_TIMCTRL_REG(pdata->timrot_n));
+    writel(TIMROT_TIMCTRL_UPDATE | TIMROT_TIMCTRL_ALWAYS_TICK |
+        TIMROT_TIMCTRL_IRQ_EN,
+        pdata->timrot_base + HW_TIMROT_TIMCTRL_REG(pdata->timrot_n));
 
     /* Setup timer irq */
-    err = request_irq(pdata->timrot_irq, &gpg_irq, 0, DRV_NAME, hw);    
+    err = request_irq(pdata->timrot_irq, &imx28_gpio_pwm_irq, 0, DRV_NAME, hw);
     if (err) {
         dev_err(dev, "failed to register timrot_irq\n");
         goto exit_free_gpio;
     }
 
     /* Run timer */
-    writel(TIMEOUT_DEFAULT, pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot_n));
+    writel(TIMEOUT_DEFAULT,
+        pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot_n));
 
     /* Setup misc devcie */
     hw->miscdev.minor  = MISC_DYNAMIC_MINOR;
     hw->miscdev.name   = dev_name(dev);
-    hw->miscdev.fops   = &gpg_fops;
+    hw->miscdev.fops   = &imx28_gpio_pwm_fops;
     hw->miscdev.parent = dev;
 
     err = misc_register(&hw->miscdev);
@@ -273,10 +276,10 @@ exit_free_mem:
     return err;
 }
 
-static int gpg_remove(struct platform_device *pdev)
+static int imx28_gpio_pwm_remove(struct platform_device *pdev)
 {
-    struct gpg_hw *hw = platform_get_drvdata(pdev);
-    const struct gpg_platform_data *pdata = hw->pdata;
+    struct imx28_gpio_pwm_hw *hw = platform_get_drvdata(pdev);
+    const struct imx28_gpio_pwm_platform_data *pdata = hw->pdata;
 
     device_init_wakeup(&pdev->dev, false);
 
@@ -290,15 +293,15 @@ static int gpg_remove(struct platform_device *pdev)
     return 0;
 }
 
-static struct platform_driver gpg_driver = {
-    .probe       = gpg_probe,
-    .remove      = gpg_remove,
+static struct platform_driver imx28_gpio_pwm_driver = {
+    .probe       = imx28_gpio_pwm_probe,
+    .remove      = imx28_gpio_pwm_remove,
     .driver      = {
         .name    = DRV_NAME,
-        .of_match_table = of_match_ptr(gpg_of_match),
+        .of_match_table = of_match_ptr(imx28_gpio_pwm_of_match),
     }
 };
-module_platform_driver(gpg_driver);
+module_platform_driver(imx28_gpio_pwm_driver);
 
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Generic GPIO pulse generator driver");
