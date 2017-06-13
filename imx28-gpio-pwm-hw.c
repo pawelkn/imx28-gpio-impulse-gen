@@ -155,16 +155,16 @@ static struct imx28_gpio_pwm_platform_data *imx28_gpio_pwm_parse_dt(struct devic
         return ERR_PTR(-ENOMEM);
 
     /* parse pin control device tree */
-	 np = of_find_compatible_node(NULL, NULL, "fsl,imx28-pinctrl");
-	 pdata->pinctrl_base = of_iomap(np, 0);
-	 if (!pdata->pinctrl_base)
-		  return ERR_PTR(-ENOMEM);
+    np = of_find_compatible_node(NULL, NULL, "fsl,imx28-pinctrl");
+    pdata->pinctrl_base = of_iomap(np, 0);
+    if (!pdata->pinctrl_base)
+         return ERR_PTR(-ENOMEM);
 
     /* parse interrupt controller device tree */
-	 np = of_find_compatible_node(NULL, NULL, "fsl,imx28-icoll");
-	 pdata->icoll_base = of_iomap(np, 0);
-	 if (!pdata->icoll_base)
-		  return ERR_PTR(-ENOMEM);
+    np = of_find_compatible_node(NULL, NULL, "fsl,imx28-icoll");
+    pdata->icoll_base = of_iomap(np, 0);
+    if (!pdata->icoll_base)
+        return ERR_PTR(-ENOMEM);
 
     return pdata;
 }
@@ -210,7 +210,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
         dev_err(dev, "unable to request GPIO %d\n", pdata->gpio);
         goto exit_free_mem;
     }
-    
+
     gpio_bank = pdata->gpio / 32;
     gpio_pin = (1 << (pdata->gpio % 32));
 
@@ -228,7 +228,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
         dev_err(dev, "failed to register timrot FIQ\n");
         goto exit_free_gpio;
     }
- 
+
     set_fiq_handler(&imx28_gpio_pwm_fiq_handler,
         &imx28_gpio_pwm_fiq_handler_end - &imx28_gpio_pwm_fiq_handler);
 
@@ -239,7 +239,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
     set_fiq_regs(&regs);
 
     /* change the timer's IRQ to FIR*/
-    irqd = irq_get_irq_data(pdata->timrot_irq); 
+    irqd = irq_get_irq_data(pdata->timrot_irq);
     writel(1 << 4,
        pdata->icoll_base + HW_ICOLL_INTERRUPTn_REG(irqd->hwirq) + BIT_SET);
 

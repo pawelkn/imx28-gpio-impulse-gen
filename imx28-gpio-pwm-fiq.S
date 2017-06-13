@@ -11,14 +11,14 @@
 
 #include "imx28-gpio-pwm.h"
 
-	.text
-	.global imx28_gpio_pwm_fiq_handler_end
+   .text
+   .global imx28_gpio_pwm_fiq_handler_end
 
 ENTRY(imx28_gpio_pwm_fiq_handler)
-	
+
    /* acknowledge the interrupt */
-   mov	reg_temp, #TIMROT_TIMCTRL_IRQ
-	str	reg_temp, [reg_timctrl, #BIT_CLR]
+   mov   reg_temp, #TIMROT_TIMCTRL_IRQ
+   str   reg_temp, [reg_timctrl, #BIT_CLR]
 
    /* load impulse reg_counter */
    ldr   reg_temp, [reg_counter]
@@ -40,14 +40,14 @@ ENTRY(imx28_gpio_pwm_fiq_handler)
    beq   set
 
 clear:
-	str	reg_gpiopin, [reg_pinctrl, #BIT_CLR]
+   str   reg_gpiopin, [reg_pinctrl, #BIT_CLR]
    b     return
 
 set:
-	str	reg_gpiopin, [reg_pinctrl, #BIT_SET]
-   
+   str   reg_gpiopin, [reg_pinctrl, #BIT_SET]
+
 return:
-	/* return from FIQ */
-	subs	pc, lr, #4
+   /* return from FIQ */
+   subs   pc, lr, #4
 
 imx28_gpio_pwm_fiq_handler_end:

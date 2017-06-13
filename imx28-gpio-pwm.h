@@ -2,12 +2,12 @@
 #define IMX28_GPIO_PWM_FIQ_H
 
 #define BIT_SET   0x4
-#define BIT_CLR	0x8
-#define BIT_TOG	0xc
+#define BIT_CLR   0x8
+#define BIT_TOG   0xc
 
 #define HW_PINCTRL_DOUT_REG(n)         (0x700 + (n) * 0x10)
 
-#define HW_ICOLL_INTERRUPTn_REG(n)		(0x120 + (n) * 0x10)
+#define HW_ICOLL_INTERRUPTn_REG(n)     (0x120 + (n) * 0x10)
 
 #define HW_TIMROT_TIMCTRL_REG(n)       (0x20 + (n) * 0x40)
 #define HW_TIMROT_FIXED_COUNT_REG(n)   (0x40 + (n) * 0x40)
