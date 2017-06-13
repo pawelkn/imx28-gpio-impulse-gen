@@ -4,12 +4,10 @@ i.MX28 GPIO pulse width modulator. It generates impulses on specified GPIO.
 
 ## Build
 
-Copy imx28-gpio-pwm* files to kernel's drivers/misc directory. 
-Edit Kconfig and Makefile in the same directory. Enable CONFIG_FIQ
-property in the kernel. Select the driver in kernel's menuconfig.
-Then rebuild the kernel 
+This driver does not work as a module. It must be embedded into kernel due to FIQ usage. 
+You will need also to manually turn on a FIQ option in the kernel, as it is disabled by default.
 
-### Usage
+## Usage
 
 To generate impulses write impulses count to a driver's file. 
 The following command would generate two impulses:
@@ -26,17 +24,15 @@ Required properties:
 * gpios: a spec for a GPIO to be used as impulse output
 
 Optional properties:
-* pulse-delay: delay between impulses. The value is given in timer ticks. A default is 60000
-* pulse-width: width of an impulse. The value is given in timer ticks. A default is 60000
-* timrot-number: used timer/rotary encoder of i.MX28 processor. A default is 2. It can be also 3. Timers 0 and 1 are already used by Linux kernel.
+* timrot: used timer of i.MX28 processor. By default it is 2. It can be also 3. Timers 0 and 1 are already used by the Linux kernel.
+* timrot-fixed-count: contains the fixed timer counter value. It defines width of an impulse and delay between the next one. By default it is 60000
 
 Example:
 ```c
         pwm {
                 compatible = "imx28-gpio-pwm";
-                gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-                pulse-width = <60000>;
-                pulse-delay = <60000>;
-                timrot-number = <2>;
+                gpios = <&gpio1 14 0>;                
+                timrot = <2>;
+                timrot-fixed-count = <60000>;
         };
 ```
