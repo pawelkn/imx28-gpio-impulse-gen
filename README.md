@@ -1,10 +1,10 @@
 # i.MX28 GPIO impulse generator
 
-It generates impulses on specified GPIO.
+The driver generates impulses on specified GPIO. It uses a hardware timer of the i.MX28 processor and FIQ interrupts.
 
 ## Build
 
-This driver does not work as a module. It must be embedded into kernel due to FIQ usage. 
+This driver can not be built as a module. It must be embedded into kernel due to FIQ interrupts usage. 
 
 ## Usage
 
@@ -23,8 +23,8 @@ Required properties:
 * gpios: a spec for a GPIO to be used as impulse output
 
 Optional properties:
-* timrot: used timer of i.MX28 processor. By default it is 2. It can be also 3. Timers 0 and 1 are already used by the Linux kernel.
-* timrot-fixed-count: contains the fixed timer counter value. It defines width of an impulse and delay between the next one. By default it is 60000
+* timrot: used timer of i.MX28 processor. By default, it is 2. It can be also 3. Timers 0 and 1 are already used by the Linux kernel.
+* timrot-fixed-count: contains the fixed timer counter value. It defines a width of an impulse and delay between the next one. By default, it is 60000
 
 Example:
 ```c
