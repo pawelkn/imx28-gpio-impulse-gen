@@ -3,7 +3,7 @@
 
 #define BIT_SET   0x4
 #define BIT_CLR   0x8
-#define BIT_TOG	 0xc
+#define BIT_TOG   0xc
 
 #define HW_PINCTRL_DOUT_REG(n)         (0x700 + (n) * 0x10)
 
