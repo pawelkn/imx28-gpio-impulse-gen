@@ -1,7 +1,7 @@
 /*
  * (c) 2017 Paweł Knioła <pawel.kn@gmail.com>
  *
- * i.MX28 GPIO pulse width modulator
+ * i.MX28 GPIO impulse generator
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -31,11 +31,11 @@
 
 #include <linux/platform_data/asoc-imx-ssi.h>
 
-#include "imx28-gpio-pwm.h"
+#include "imx28-gpio-impulse-gen.h"
 
-#define DRV_NAME "imx28-gpio-pwm"
+#define DRV_NAME "imx28-gpio-impulse-gen"
 
-struct imx28_gpio_pwm_platform_data {
+struct imx28_gpio_impulse_gen_platform_data {
     int gpio;
 
     u32 timrot;
@@ -47,30 +47,30 @@ struct imx28_gpio_pwm_platform_data {
     void __iomem *icoll_base;
 };
 
-struct imx28_gpio_pwm_hw {
-    const struct imx28_gpio_pwm_platform_data *pdata;
+struct imx28_gpio_impulse_gen_hw {
+    const struct imx28_gpio_impulse_gen_platform_data *pdata;
     struct miscdevice miscdev;
 
     u64 counter;
     bool state;
 };
 
-extern unsigned char imx28_gpio_pwm_fiq_handler, imx28_gpio_pwm_fiq_handler_end;
-static struct fiq_handler imx28_gpio_pwm_fh = {
+extern unsigned char imx28_gpio_impulse_gen_fiq_handler, imx28_gpio_impulse_gen_fiq_handler_end;
+static struct fiq_handler imx28_gpio_impulse_gen_fh = {
     .name = DRV_NAME
 };
 
-static int imx28_gpio_pwm_open(struct inode *inode, struct file *file)
+static int imx28_gpio_impulse_gen_open(struct inode *inode, struct file *file)
 {
    /* dummy open function must be declared due to bug in kernel 3.16 */
    return 0;
 }
 
-static ssize_t imx28_gpio_pwm_read(struct file *file, char __user * userbuf, size_t count, loff_t * ppos)
+static ssize_t imx28_gpio_impulse_gen_read(struct file *file, char __user * userbuf, size_t count, loff_t * ppos)
 {
     struct miscdevice *miscdev = file->private_data;
     struct device *dev = miscdev->parent;
-    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
+    struct imx28_gpio_impulse_gen_hw *hw = dev_get_drvdata(dev);
 
     char buf[22];
     int len = sprintf(buf, "%llu\n", hw->counter);
@@ -88,11 +88,11 @@ static ssize_t imx28_gpio_pwm_read(struct file *file, char __user * userbuf, siz
     return len;
 }
 
-static ssize_t imx28_gpio_pwm_write(struct file *file, const char __user * userbuf, size_t count, loff_t * ppos)
+static ssize_t imx28_gpio_impulse_gen_write(struct file *file, const char __user * userbuf, size_t count, loff_t * ppos)
 {
     struct miscdevice *miscdev = file->private_data;
     struct device *dev = miscdev->parent;
-    struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
+    struct imx28_gpio_impulse_gen_hw *hw = dev_get_drvdata(dev);
 
     u64 increment;
     if (kstrtoull_from_user(userbuf, count, 0, &increment))
@@ -102,35 +102,35 @@ static ssize_t imx28_gpio_pwm_write(struct file *file, const char __user * userb
     return count;
 }
 
-static struct file_operations imx28_gpio_pwm_fops = {
+static struct file_operations imx28_gpio_impulse_gen_fops = {
     .owner  = THIS_MODULE,
-    .open   = imx28_gpio_pwm_open,
-    .read   = imx28_gpio_pwm_read,
-    .write  = imx28_gpio_pwm_write,
+    .open   = imx28_gpio_impulse_gen_open,
+    .read   = imx28_gpio_impulse_gen_read,
+    .write  = imx28_gpio_impulse_gen_write,
 };
 
-static const struct of_device_id imx28_gpio_pwm_of_match[] = {
+static const struct of_device_id imx28_gpio_impulse_gen_of_match[] = {
     { .compatible = DRV_NAME, },
     { },
 };
-MODULE_DEVICE_TABLE(of, imx28_gpio_pwm_of_match);
+MODULE_DEVICE_TABLE(of, imx28_gpio_impulse_gen_of_match);
 
-static struct imx28_gpio_pwm_platform_data *imx28_gpio_pwm_parse_dt(struct device *dev)
+static struct imx28_gpio_impulse_gen_platform_data *imx28_gpio_impulse_gen_parse_dt(struct device *dev)
 {
     enum of_gpio_flags flags;
-    struct imx28_gpio_pwm_platform_data *pdata;
+    struct imx28_gpio_impulse_gen_platform_data *pdata;
     const struct of_device_id *of_id;
     struct device_node *np;
     int err;
 
     /* parse driver device tree */
-    of_id = of_match_device(imx28_gpio_pwm_of_match, dev);
+    of_id = of_match_device(imx28_gpio_impulse_gen_of_match, dev);
     np = dev->of_node;
 
     if (!of_id || !np)
         return NULL;
 
-    pdata = devm_kzalloc(dev, sizeof(struct imx28_gpio_pwm_platform_data), GFP_KERNEL);
+    pdata = devm_kzalloc(dev, sizeof(struct imx28_gpio_impulse_gen_platform_data), GFP_KERNEL);
     if (!pdata)
         return ERR_PTR(-ENOMEM);
 
@@ -169,11 +169,11 @@ static struct imx28_gpio_pwm_platform_data *imx28_gpio_pwm_parse_dt(struct devic
     return pdata;
 }
 
-static int imx28_gpio_pwm_probe(struct platform_device *pdev)
+static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 {
     struct device *dev = &pdev->dev;
-    const struct imx28_gpio_pwm_platform_data *pdata = dev_get_platdata(dev);
-    struct imx28_gpio_pwm_hw *hw;
+    const struct imx28_gpio_impulse_gen_platform_data *pdata = dev_get_platdata(dev);
+    struct imx28_gpio_impulse_gen_hw *hw;
     struct irq_data* irqd;
     struct pt_regs regs;
     long gpio_pin, gpio_bank;
@@ -181,7 +181,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
 
     /* read platform data */
     if (!pdata) {
-        pdata = imx28_gpio_pwm_parse_dt(dev);
+        pdata = imx28_gpio_impulse_gen_parse_dt(dev);
         if (IS_ERR(pdata))
             return PTR_ERR(pdata);
 
@@ -192,7 +192,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
     }
 
     /* create device data struct */
-    hw = devm_kzalloc(dev, sizeof(struct imx28_gpio_pwm_hw), GFP_KERNEL);
+    hw = devm_kzalloc(dev, sizeof(struct imx28_gpio_impulse_gen_hw), GFP_KERNEL);
     if (!hw) {
         err = -ENOMEM;
         goto exit_free_mem;
@@ -223,14 +223,14 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
         pdata->timrot_base + HW_TIMROT_TIMCTRL_REG(pdata->timrot));
 
     /* setup FIQ */
-    err = claim_fiq(&imx28_gpio_pwm_fh);
+    err = claim_fiq(&imx28_gpio_impulse_gen_fh);
     if (err) {
         dev_err(dev, "failed to register timrot FIQ\n");
         goto exit_free_gpio;
     }
 
-    set_fiq_handler(&imx28_gpio_pwm_fiq_handler,
-        &imx28_gpio_pwm_fiq_handler_end - &imx28_gpio_pwm_fiq_handler);
+    set_fiq_handler(&imx28_gpio_impulse_gen_fiq_handler,
+        &imx28_gpio_impulse_gen_fiq_handler_end - &imx28_gpio_impulse_gen_fiq_handler);
 
     regs.uregs[reg_timctrl] = (long)pdata->timrot_base + HW_TIMROT_TIMCTRL_REG(pdata->timrot);
     regs.uregs[reg_pinctrl] = (long)pdata->pinctrl_base + HW_PINCTRL_DOUT_REG(gpio_bank);
@@ -253,7 +253,7 @@ static int imx28_gpio_pwm_probe(struct platform_device *pdev)
     /* setup misc devcie */
     hw->miscdev.minor  = MISC_DYNAMIC_MINOR;
     hw->miscdev.name   = dev_name(dev);
-    hw->miscdev.fops   = &imx28_gpio_pwm_fops;
+    hw->miscdev.fops   = &imx28_gpio_impulse_gen_fops;
     hw->miscdev.parent = dev;
 
     err = misc_register(&hw->miscdev);
@@ -275,10 +275,10 @@ exit_free_mem:
     return err;
 }
 
-static int imx28_gpio_pwm_remove(struct platform_device *pdev)
+static int imx28_gpio_impulse_gen_remove(struct platform_device *pdev)
 {
-    struct imx28_gpio_pwm_hw *hw = platform_get_drvdata(pdev);
-    const struct imx28_gpio_pwm_platform_data *pdata = hw->pdata;
+    struct imx28_gpio_impulse_gen_hw *hw = platform_get_drvdata(pdev);
+    const struct imx28_gpio_impulse_gen_platform_data *pdata = hw->pdata;
 
     device_init_wakeup(&pdev->dev, false);
 
@@ -291,16 +291,16 @@ static int imx28_gpio_pwm_remove(struct platform_device *pdev)
     return 0;
 }
 
-static struct platform_driver imx28_gpio_pwm_driver = {
-    .probe      = imx28_gpio_pwm_probe,
-    .remove     = imx28_gpio_pwm_remove,
+static struct platform_driver imx28_gpio_impulse_gen_driver = {
+    .probe      = imx28_gpio_impulse_gen_probe,
+    .remove     = imx28_gpio_impulse_gen_remove,
     .driver     = {
         .name           = DRV_NAME,
-        .of_match_table = of_match_ptr(imx28_gpio_pwm_of_match),
+        .of_match_table = of_match_ptr(imx28_gpio_impulse_gen_of_match),
     }
 };
-module_platform_driver(imx28_gpio_pwm_driver);
+module_platform_driver(imx28_gpio_impulse_gen_driver);
 
-MODULE_LICENSE("GPL 2");
-MODULE_DESCRIPTION("i.MX28 GPIO pulse width modulator");
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("i.MX28 GPIO impulse generator");
 MODULE_AUTHOR("Paweł Knioła <pawel.kn@gmail.com>");

@@ -9,12 +9,12 @@
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 
-#include "imx28-gpio-pwm.h"
+#include "imx28-gpio-impulse-gen.h"
 
    .text
-   .global imx28_gpio_pwm_fiq_handler_end
+   .global imx28_gpio_impulse_gen_fiq_handler_end
 
-ENTRY(imx28_gpio_pwm_fiq_handler)
+ENTRY(imx28_gpio_impulse_gen_fiq_handler)
 
    /* acknowledge the interrupt */
    mov   reg_temp, #TIMROT_TIMCTRL_IRQ
@@ -47,4 +47,4 @@ return:
    /* return from FIQ */
    subs   pc, lr, #4
 
-imx28_gpio_pwm_fiq_handler_end:
+imx28_gpio_impulse_gen_fiq_handler_end:

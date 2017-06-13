@@ -1,5 +1,5 @@
-config IMX28_GPIO_PWM
-   bool "i.MX28 GPIO pulse width modulator"
+config IMX28_GPIO_IMPULSE_GEN
+   bool "i.MX28 GPIO impulse generator"
    depends on SOC_IMX28 && ( GPIOLIB || COMPILE_TEST )
    select FIQ
    default n
