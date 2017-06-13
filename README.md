@@ -11,11 +11,11 @@ This driver does not work as a module. It must be embedded into kernel due to FI
 To generate impulses write impulses count to a driver's file. 
 The following command would generate two impulses:
 ```sh
-echo 2 > /dev/pwm
+echo 2 > /dev/impulse-gen
 ```
 
 The name of the driver's file depends on a device's name, that has been declared in a platform device tree.
-Here it is the `pwm`.
+Here it is the `impulse-gen`.
 
 ## Device tree bindings
 
@@ -28,7 +28,7 @@ Optional properties:
 
 Example:
 ```c
-        pwm {
+        impulse-gen {
                 compatible = "imx28-gpio-impulse-gen";
                 gpios = <&gpio1 14 0>;                
                 timrot = <2>;
