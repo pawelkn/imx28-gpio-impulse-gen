@@ -5,7 +5,6 @@ i.MX28 GPIO pulse width modulator. It generates impulses on specified GPIO.
 ## Build
 
 This driver does not work as a module. It must be embedded into kernel due to FIQ usage. 
-You will need also to manually turn on a FIQ option in the kernel, as it is disabled by default.
 
 ## Usage
 

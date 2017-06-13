@@ -1,6 +1,7 @@
 config IMX28_GPIO_PWM
    bool "i.MX28 GPIO pulse width modulator"
-   depends on FIQ && SOC_IMX28 && ( GPIOLIB || COMPILE_TEST )
+   depends on SOC_IMX28 && ( GPIOLIB || COMPILE_TEST )
+   select FIQ
    default n
    help
      Say Y here to add the driver.
