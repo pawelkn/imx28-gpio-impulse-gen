@@ -52,7 +52,6 @@ struct imx28_gpio_impulse_gen_hw {
 	struct miscdevice miscdev;
 
 	u64 counter;
-	bool state;
 };
 
 extern unsigned char imx28_gpio_impulse_gen_fiq_handler, imx28_gpio_impulse_gen_fiq_handler_end;
@@ -62,8 +61,8 @@ static struct fiq_handler imx28_gpio_impulse_gen_fh = {
 
 static int imx28_gpio_impulse_gen_open(struct inode *inode, struct file *file)
 {
-   /* dummy open function must be declared due to bug in kernel 3.16 */
-   return 0;
+	/* dummy open function must be declared due to bug in kernel 3.16 */
+	return 0;
 }
 
 static ssize_t imx28_gpio_impulse_gen_read(struct file *file, char __user * userbuf, size_t count, loff_t * ppos)
@@ -200,7 +199,6 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 
 	hw->pdata = pdata;
 	hw->counter = 0;
-	hw->state = 0;
 
 	dev_set_drvdata(dev, hw);
 
