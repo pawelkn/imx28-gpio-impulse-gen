@@ -260,7 +260,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 		goto exit_free_gpio;
 	}
 
-	dev_info(dev, "registered new misc device %s\n", hw->miscdev.name);
+	dev_info(dev, "registered new misc device\n");
 	return 0;
 
 exit_free_gpio:
@@ -275,17 +275,6 @@ exit_free_mem:
 
 static int imx28_gpio_impulse_gen_remove(struct platform_device *pdev)
 {
-	struct imx28_gpio_impulse_gen_hw *hw = platform_get_drvdata(pdev);
-	const struct imx28_gpio_impulse_gen_platform_data *pdata = hw->pdata;
-
-	device_init_wakeup(&pdev->dev, false);
-
-	misc_deregister(&hw->miscdev);
-	gpio_free(pdata->gpio);
-	kfree(hw);
-	if (!dev_get_platdata(&pdev->dev))
-		kfree(pdata);
-
 	return 0;
 }
 
