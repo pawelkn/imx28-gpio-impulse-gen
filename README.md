@@ -1,6 +1,6 @@
-# imx28-gpio-pwm
+# i.MX28 GPIO impulse generator
 
-i.MX28 GPIO pulse width modulator. It generates impulses on specified GPIO.
+It generates impulses on specified GPIO.
 
 ## Build
 
@@ -29,7 +29,7 @@ Optional properties:
 Example:
 ```c
         pwm {
-                compatible = "imx28-gpio-pwm";
+                compatible = "imx28-gpio-impulse-gen";
                 gpios = <&gpio1 14 0>;                
                 timrot = <2>;
                 timrot-fixed-count = <60000>;
