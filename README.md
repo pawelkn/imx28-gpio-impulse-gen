@@ -2,14 +2,13 @@
 
 i.MX28 GPIO pulse width modulator. It generates impulses on specified GPIO.
 
-## Cross-compile build
-```sh
-export PATH=<path to toolchain executables>
-export KERNEL_DIR=<path to kernel build directory>
-export CROSS_COMPILE=<cross compilation prefix>
-export ARCH=<architecture eg.: arm>
-make
-```
+## Build
+
+Copy imx28-gpio-pwm* files to kernel's drivers/misc directory. 
+Edit Kconfig and Makefile in the same directory. Enable CONFIG_FIQ
+property in the kernel. Select the driver in kernel's menuconfig.
+Then rebuild the kernel 
+
 ### Usage
 
 To generate impulses write impulses count to a driver's file. 

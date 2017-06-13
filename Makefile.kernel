@@ -1,1 +1,3 @@
-obj-$(CONFIG_IMX28_GPIO_PWM)	+= imx28-gpio-pwm.o
+imx28-gpio-pwm-y += imx28-gpio-pwm-hw.o 
+imx28-gpio-pwm-y += imx28-gpio-pwm-fiq.o
+obj-$(CONFIG_IMX28_GPIO_PWM)  += imx28-gpio-pwm.o

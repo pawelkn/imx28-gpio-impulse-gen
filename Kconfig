@@ -1,8 +1,9 @@
 config IMX28_GPIO_PWM
-	tristate "i.MX28 GPIO pulse width modulator"
-	depends on SOC_IMX28 || GPIOLIB || COMPILE_TEST
-	help
-	  Say Y here to add the driver.
+   tristate "i.MX28 GPIO pulse width modulator"
+   depends on FIQ && SOC_IMX28 && ( GPIOLIB || COMPILE_TEST )
+   default n
+   help
+     Say Y here to add the driver.
 
-	  To compile this driver as a module, choose M here: the
-	  module will be called gpio-pulse-generator.
+     Do not compile this driver as a module! It won't work as a module.
+
