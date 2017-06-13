@@ -11,40 +11,40 @@
 
 #include "imx28-gpio-impulse-gen.h"
 
-   .text
-   .global imx28_gpio_impulse_gen_fiq_handler_end
+	.text
+	.global imx28_gpio_impulse_gen_fiq_handler_end
 
 ENTRY(imx28_gpio_impulse_gen_fiq_handler)
 
-   /* acknowledge the interrupt */
-   mov   reg_temp, #TIMROT_TIMCTRL_IRQ
-   str   reg_temp, [reg_timctrl, #BIT_CLR]
+	/* acknowledge the interrupt */
+	mov	reg_temp, #TIMROT_TIMCTRL_IRQ
+	str	reg_temp, [reg_timctrl, #BIT_CLR]
 
-   /* return, if counter is eqal 0 */
-   ldr   reg_temp, [reg_counter]
-   cmp   reg_temp, #0
-   beq   return
+	/* return, if counter is eqal 0 */
+	ldr	reg_temp, [reg_counter]
+	cmp	reg_temp, #0
+	beq	return
 
-   /* swap a current gpio state */
-   ldr   reg_temp, [reg_pinctrl]
-   and   reg_temp, reg_temp, reg_gpiopin
-   cmp   reg_temp, #0
-   beq   set
+	/* swap a current gpio state */
+	ldr	reg_temp, [reg_pinctrl]
+	and	reg_temp, reg_temp, reg_gpiopin
+	cmp	reg_temp, #0
+	beq	set
 
-   /* decrement counter before the clear slope */
-   ldr   reg_temp, [reg_counter]
-   sub   reg_temp, #1
-   str   reg_temp, [reg_counter]
+	/* decrement counter before the clear slope */
+	ldr	reg_temp, [reg_counter]
+	sub	reg_temp, #1
+	str	reg_temp, [reg_counter]
 
 clear:
-   str   reg_gpiopin, [reg_pinctrl, #BIT_CLR]
-   b     return
+	str	reg_gpiopin, [reg_pinctrl, #BIT_CLR]
+	b	  return
 
 set:
-   str   reg_gpiopin, [reg_pinctrl, #BIT_SET]
+	str	reg_gpiopin, [reg_pinctrl, #BIT_SET]
 
 return:
-   /* return from FIQ */
-   subs   pc, lr, #4
+	/* return from FIQ */
+	subs	pc, lr, #4
 
 imx28_gpio_impulse_gen_fiq_handler_end:
