@@ -1,9 +1,6 @@
 config IMX28_GPIO_PWM
-   tristate "i.MX28 GPIO pulse width modulator"
+   bool "i.MX28 GPIO pulse width modulator"
    depends on FIQ && SOC_IMX28 && ( GPIOLIB || COMPILE_TEST )
    default n
    help
      Say Y here to add the driver.
-
-     Do not compile this driver as a module! It won't work as a module.
-
