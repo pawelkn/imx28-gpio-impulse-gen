@@ -73,7 +73,7 @@ static ssize_t imx28_gpio_pwm_read(struct file *file, char __user * userbuf, siz
     struct imx28_gpio_pwm_hw *hw = dev_get_drvdata(dev);
 
     char buf[22];
-    int len = sprintf(buf, "%llu\n", hw->counter / 2);
+    int len = sprintf(buf, "%llu\n", hw->counter);
 
     if ((len < 0) || (len > count))
         return -EINVAL;
@@ -98,7 +98,7 @@ static ssize_t imx28_gpio_pwm_write(struct file *file, const char __user * userb
     if (kstrtoull_from_user(userbuf, count, 0, &increment))
         return -EINVAL;
 
-    hw->counter += increment * 2;
+    hw->counter += increment;
     return count;
 }
 
@@ -158,7 +158,7 @@ static struct imx28_gpio_pwm_platform_data *imx28_gpio_pwm_parse_dt(struct devic
     np = of_find_compatible_node(NULL, NULL, "fsl,imx28-pinctrl");
     pdata->pinctrl_base = of_iomap(np, 0);
     if (!pdata->pinctrl_base)
-         return ERR_PTR(-ENOMEM);
+        return ERR_PTR(-ENOMEM);
 
     /* parse interrupt controller device tree */
     np = of_find_compatible_node(NULL, NULL, "fsl,imx28-icoll");

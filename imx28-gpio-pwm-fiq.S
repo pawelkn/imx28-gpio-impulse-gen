@@ -20,24 +20,21 @@ ENTRY(imx28_gpio_pwm_fiq_handler)
    mov   reg_temp, #TIMROT_TIMCTRL_IRQ
    str   reg_temp, [reg_timctrl, #BIT_CLR]
 
-   /* load impulse reg_counter */
+   /* return, if counter is eqal 0 */
    ldr   reg_temp, [reg_counter]
-
-   /* return, if impulse reg_counter is eqal 0 */
    cmp   reg_temp, #0
    beq   return
 
-   /* decrement impulse counter */
-   sub   reg_temp, #1
-   str   reg_temp, [reg_counter]
-
-   /* load gpio state */
+   /* swap a current gpio state */
    ldr   reg_temp, [reg_pinctrl]
-
-   /* swap the gpio state */
    and   reg_temp, reg_temp, reg_gpiopin
    cmp   reg_temp, #0
    beq   set
+
+   /* decrement counter before the clear slope */
+   ldr   reg_temp, [reg_counter]
+   sub   reg_temp, #1
+   str   reg_temp, [reg_counter]
 
 clear:
    str   reg_gpiopin, [reg_pinctrl, #BIT_CLR]
