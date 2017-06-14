@@ -4,11 +4,11 @@ The driver generates impulses on specified GPIO. It uses a hardware timer of the
 
 ## Build
 
-This driver can not be built as a module. It must be embedded into kernel due to FIQ interrupts usage. 
+This driver can not be built as a module. It must be embedded into kernel due to FIQ interrupts usage.
 
 ## Usage
 
-To generate impulses write impulses count to a driver's file. 
+To generate impulses write impulses count to a driver's file.
 The following command would generate two impulses:
 ```sh
 echo 2 > /dev/impulse-gen
@@ -28,10 +28,10 @@ Optional properties:
 
 Example:
 ```c
-        impulse-gen {
-                compatible = "imx28-gpio-impulse-gen";
-                gpios = <&gpio1 14 0>;                
-                timrot = <2>;
-                timrot-fixed-count = <60000>;
-        };
+impulse-gen {
+	compatible = "imx28-gpio-impulse-gen";
+	gpios = <&gpio1 14 0>;
+	timrot = <2>;
+	timrot-fixed-count = <60000>;
+};
 ```
