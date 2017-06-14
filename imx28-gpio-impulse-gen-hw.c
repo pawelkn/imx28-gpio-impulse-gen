@@ -212,8 +212,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 	gpio_bank = pdata->gpio / 32;
 	gpio_pin = (1 << (pdata->gpio % 32));
 
-	gpio_direction_output(pdata->gpio, 1);
-	gpio_set_value(pdata->gpio, 0);
+	gpio_direction_output(pdata->gpio, 0);
 
 	/* setup timer */
 	writel(TIMROT_TIMCTRL_UPDATE | TIMROT_TIMCTRL_ALWAYS_TICK |
