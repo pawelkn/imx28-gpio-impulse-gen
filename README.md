@@ -24,7 +24,6 @@ Required properties:
 
 Optional properties:
 * timrot: used timer of i.MX28 processor. By default, it is 2. It can be also 3. Timers 0 and 1 are already used by the Linux kernel.
-* timrot-fixed-count: contains the fixed timer counter value. It defines a width of an impulse and delay between the next one. By default, it is 60000
 
 Example:
 ```c
@@ -32,6 +31,5 @@ impulse-gen {
 	compatible = "imx28-gpio-impulse-gen";
 	gpios = <&gpio1 14 0>;
 	timrot = <2>;
-	timrot-fixed-count = <60000>;
 };
 ```

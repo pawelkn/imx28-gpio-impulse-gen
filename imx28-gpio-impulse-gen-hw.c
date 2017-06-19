@@ -35,12 +35,14 @@
 
 #define DRV_NAME "imx28-gpio-impulse-gen"
 
+#define IGIG_SET_FIXED_COUNT 0
+#define IGIG_GET_FIXED_COUNT 1
+
 struct imx28_gpio_impulse_gen_platform_data {
 	int gpio;
 
 	u32 timrot;
 	u32 timrot_irq;
-	u32 timrot_fixed_count;
 
 	void __iomem *timrot_base;
 	void __iomem *pinctrl_base;
@@ -51,6 +53,7 @@ struct imx28_gpio_impulse_gen_hw {
 	const struct imx28_gpio_impulse_gen_platform_data *pdata;
 	struct miscdevice miscdev;
 
+	u32 fixed_count;
 	atomic_t counter;
 };
 
@@ -101,11 +104,40 @@ static ssize_t imx28_gpio_impulse_gen_write(struct file *file, const char __user
 	return count;
 }
 
+static long imx28_gpio_impulse_gen_ioctl(struct file *file, unsigned int cmd,	unsigned long arg)
+{
+	struct miscdevice *miscdev = file->private_data;
+	struct device *dev = miscdev->parent;
+	struct imx28_gpio_impulse_gen_hw *hw = dev_get_drvdata(dev);
+	const struct imx28_gpio_impulse_gen_platform_data *pdata = hw->pdata;
+	void __user *argp = (void __user *)arg;
+
+	switch (cmd) {
+	case IGIG_SET_FIXED_COUNT:
+		if (copy_from_user(&hw->fixed_count, argp, sizeof(u32)))
+			return -EFAULT;
+
+		writel(hw->fixed_count, pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot));
+		break;
+
+	case IGIG_GET_FIXED_COUNT:
+		if (copy_to_user(argp, &hw->fixed_count, sizeof(u32)))
+			return -EFAULT;
+		break;
+
+	default:
+		return -ENOTTY;
+	}
+
+	return 0;
+}
+
 static struct file_operations imx28_gpio_impulse_gen_fops = {
 	.owner = THIS_MODULE,
 	.open  = imx28_gpio_impulse_gen_open,
 	.read  = imx28_gpio_impulse_gen_read,
 	.write = imx28_gpio_impulse_gen_write,
+	.unlocked_ioctl = imx28_gpio_impulse_gen_ioctl,
 };
 
 static const struct of_device_id imx28_gpio_impulse_gen_of_match[] = {
@@ -138,10 +170,6 @@ static struct imx28_gpio_impulse_gen_platform_data *imx28_gpio_impulse_gen_parse
 	err = of_property_read_u32(np, "timrot", &pdata->timrot);
 	if (err)
 		pdata->timrot = TIMROT_DEFAULT;
-
-	err = of_property_read_u32(np, "timrot-fixed-count", &pdata->timrot_fixed_count);
-	if (err)
-		pdata->timrot_fixed_count = TIMROT_FIXED_COUNT_DEFAULT;
 
 	/* parse timrot device tree */
 	np = of_find_compatible_node(NULL, NULL, "fsl,imx28-timrot");
@@ -196,6 +224,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	hw->pdata = pdata;
+	hw->fixed_count = 60000;
 	atomic_set(&hw->counter, 0);
 
 	dev_set_drvdata(dev, hw);
@@ -259,7 +288,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 	enable_fiq(pdata->timrot_irq);
 
 	/* run timer */
-	writel(pdata->timrot_fixed_count,
+	writel(hw->fixed_count,
 		pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot));
 
 	return 0;
