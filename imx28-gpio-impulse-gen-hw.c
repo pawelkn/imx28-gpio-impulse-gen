@@ -51,7 +51,7 @@ struct imx28_gpio_impulse_gen_hw {
 	const struct imx28_gpio_impulse_gen_platform_data *pdata;
 	struct miscdevice miscdev;
 
-	u64 counter;
+	atomic_t counter;
 };
 
 extern unsigned char imx28_gpio_impulse_gen_fiq_handler, imx28_gpio_impulse_gen_fiq_handler_end;
@@ -72,7 +72,7 @@ static ssize_t imx28_gpio_impulse_gen_read(struct file *file, char __user * user
 	struct imx28_gpio_impulse_gen_hw *hw = dev_get_drvdata(dev);
 
 	char buf[22];
-	int len = sprintf(buf, "%llu\n", hw->counter);
+	int len = sprintf(buf, "%u\n", atomic_read(&hw->counter));
 
 	if ((len < 0) || (len > count))
 		return -EINVAL;
@@ -93,11 +93,11 @@ static ssize_t imx28_gpio_impulse_gen_write(struct file *file, const char __user
 	struct device *dev = miscdev->parent;
 	struct imx28_gpio_impulse_gen_hw *hw = dev_get_drvdata(dev);
 
-	u64 increment;
-	if (kstrtoull_from_user(userbuf, count, 0, &increment))
+	unsigned int increment;
+	if (kstrtouint_from_user(userbuf, count, 0, &increment))
 		return -EINVAL;
 
-	hw->counter += increment;
+	atomic_add(increment, &hw->counter);
 	return count;
 }
 
@@ -196,7 +196,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	hw->pdata = pdata;
-	hw->counter = 0;
+	atomic_set(&hw->counter, 0);
 
 	dev_set_drvdata(dev, hw);
 
