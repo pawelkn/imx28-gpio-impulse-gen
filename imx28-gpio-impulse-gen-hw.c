@@ -192,10 +192,8 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 
 	/* create device data struct */
 	hw = devm_kzalloc(dev, sizeof(struct imx28_gpio_impulse_gen_hw), GFP_KERNEL);
-	if (!hw) {
-		err = -ENOMEM;
-		goto exit_free_mem;
-	}
+	if (!hw)
+		return -ENOMEM;
 
 	hw->pdata = pdata;
 	hw->counter = 0;
@@ -203,10 +201,10 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 	dev_set_drvdata(dev, hw);
 
 	/* setup gpio */
-	err = gpio_request_one(pdata->gpio, GPIOF_IN, dev_name(dev));
+	err = devm_gpio_request_one(dev, pdata->gpio, GPIOF_IN, dev_name(dev));
 	if (err) {
 		dev_err(dev, "unable to request GPIO %d\n", pdata->gpio);
-		goto exit_free_mem;
+		return -EINVAL;
 	}
 
 	gpio_bank = pdata->gpio / 32;
@@ -219,13 +217,30 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 		TIMROT_TIMCTRL_RELOAD | TIMROT_TIMCTRL_IRQ_EN,
 		pdata->timrot_base + HW_TIMROT_TIMCTRL_REG(pdata->timrot));
 
-	/* setup FIQ */
+	/* register FIQ */
 	err = claim_fiq(&imx28_gpio_impulse_gen_fh);
 	if (err) {
 		dev_err(dev, "failed to register timrot FIQ\n");
-		goto exit_free_gpio;
+		return -EINVAL;
 	}
 
+	/* setup misc devcie */
+	hw->miscdev.minor  = MISC_DYNAMIC_MINOR;
+	hw->miscdev.name   = dev_name(dev);
+	hw->miscdev.fops   = &imx28_gpio_impulse_gen_fops;
+	hw->miscdev.parent = dev;
+
+
+	/* register misc driver */
+	err = misc_register(&hw->miscdev);
+	if (err) {
+		dev_err(dev, "failed to register misc device\n");
+		return -EINVAL;
+	}
+
+	dev_info(dev, "registered new misc device\n");
+
+	/* set FIQ handler and registers */
 	set_fiq_handler(&imx28_gpio_impulse_gen_fiq_handler,
 		&imx28_gpio_impulse_gen_fiq_handler_end - &imx28_gpio_impulse_gen_fiq_handler);
 
@@ -235,7 +250,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 	regs.uregs[reg_counter] = (long)&hw->counter;
 	set_fiq_regs(&regs);
 
-	/* change the timer's IRQ to FIR*/
+	/* change the timer's IRQ to FIQ*/
 	irqd = irq_get_irq_data(pdata->timrot_irq);
 	writel(1 << 4,
 	   pdata->icoll_base + HW_ICOLL_INTERRUPTn_REG(irqd->hwirq) + BIT_SET);
@@ -247,29 +262,7 @@ static int imx28_gpio_impulse_gen_probe(struct platform_device *pdev)
 	writel(pdata->timrot_fixed_count,
 		pdata->timrot_base + HW_TIMROT_FIXED_COUNT_REG(pdata->timrot));
 
-	/* setup misc devcie */
-	hw->miscdev.minor  = MISC_DYNAMIC_MINOR;
-	hw->miscdev.name   = dev_name(dev);
-	hw->miscdev.fops   = &imx28_gpio_impulse_gen_fops;
-	hw->miscdev.parent = dev;
-
-	err = misc_register(&hw->miscdev);
-	if (err) {
-		dev_err(dev, "failed to register misc device\n");
-		goto exit_free_gpio;
-	}
-
-	dev_info(dev, "registered new misc device\n");
 	return 0;
-
-exit_free_gpio:
-	gpio_free(pdata->gpio);
-exit_free_mem:
-	kfree(hw);
-	if (!dev_get_platdata(&pdev->dev))
-		kfree(pdata);
-
-	return err;
 }
 
 static int imx28_gpio_impulse_gen_remove(struct platform_device *pdev)
