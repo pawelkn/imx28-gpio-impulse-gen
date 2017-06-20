@@ -8,10 +8,28 @@ This driver can not be built as a module. It must be embedded into kernel due to
 
 ## Usage
 
-To generate impulses write impulses count to a driver's file.
-The following command would generate two impulses:
-```sh
-echo 2 > /dev/impulse-gen
+To generate impulses write impulses count to a driver's file. A width of impulses can be set by an appropriate ioctl call.
+The following code would generate two impulses:
+```c
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+
+#define SET_FIXED_COUNT 0
+#define GET_FIXED_COUNT 1
+
+int main(int, char *)
+{
+    int fp = open("/dev/imp0", O_RDWR );
+    int fixed_count = 30000;
+    char impulses[] = "3";
+
+    ioctl(fp, SET_FIXED_COUNT, &fixed_count );
+    write(fp, impulses, sizeof(impulses) );
+    close(fp);
+
+    return 0;
+}
 ```
 
 The name of the driver's file depends on a device's name, that has been declared in a platform device tree.
