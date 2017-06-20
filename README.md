@@ -18,14 +18,14 @@ The following code would generate two impulses:
 #define SET_FIXED_COUNT 0
 #define GET_FIXED_COUNT 1
 
-int main(int, char *)
+int main(int, char*)
 {
-    int fp = open("/dev/imp0", O_RDWR );
-    int fixed_count = 30000;
-    char impulses[] = "3";
+    int fp = open("/dev/imp0", O_RDWR);
+    int fixed_count = 60000;
+    char impulses[] = "2";
 
-    ioctl(fp, SET_FIXED_COUNT, &fixed_count );
-    write(fp, impulses, sizeof(impulses) );
+    ioctl(fp, SET_FIXED_COUNT, &fixed_count);
+    write(fp, impulses, sizeof(impulses));
     close(fp);
 
     return 0;
