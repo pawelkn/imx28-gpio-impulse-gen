@@ -33,7 +33,7 @@ int main(int, char *)
 ```
 
 The name of the driver's file depends on a device's name, that has been declared in a platform device tree.
-Here it is the `impulse-gen`.
+Here it is the `imp0`.
 
 ## Device tree bindings
 
@@ -45,7 +45,7 @@ Optional properties:
 
 Example:
 ```c
-impulse-gen {
+imp0 {
 	compatible = "imx28-gpio-impulse-gen";
 	gpios = <&gpio1 14 0>;
 	timrot = <2>;
